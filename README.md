@@ -2,6 +2,34 @@
 
 A small script to build and deploy a NixOS system.
 
+## Installation
+
+Obtain the package like this:
+
+```nix
+let nixos-deploy =
+  let
+    src = fetchgit {
+      url = "https://github.com/Julow/nixos-deploy";
+      rev = "020042f9e548a93e54549b795bb3417da8f552e7";
+      sha256 = "1kw05nybnydg82rjjj1nxwmx1x0k8hr242xmrrxy8qc6n36s20zh";
+    };
+  in
+  pkgs.callPackage src {};
+in
+```
+
+And add it to your environment, in your NixOS configuration:
+
+```nix
+...
+  environment.systemPackages = [
+    ...
+    nixos-deploy
+  ];
+...
+```
+
 ## Usage: Local
 
 ```bash
