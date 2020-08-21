@@ -16,6 +16,34 @@ build ()
   nix-build --no-out-link '<nixpkgs/nixos>' -I nixos-config="$config" "${nixpkgs[@]}" "$@"
 }
 
+# Outputs to stdout a shell script that activates system.
+# Args: system
+activate_script ()
+{
+  echo \
+"nix-env --profile /nix/var/nix/profiles/system --set '$1' && \
+/nix/var/nix/profiles/system/bin/switch-to-configuration switch"
+}
+
+# Args: system
+deploy_local ()
+{
+  echo "Activating"
+  su -c "$(activate_script "$1")"
+}
+
+# Args: target system
+deploy_remote ()
+{
+  if [[ ${USE_SUBSTITUTE-1} -eq 1 ]]; then use_substitute="-s"; else use_substitute=""; fi
+
+  echo "Uploading to $1"
+  nix copy --no-check-sigs --to "$1" $use_substitute "$2"
+
+  echo "Activating"
+  ssh "$1" -- "$(activate_script "$2")"
+}
+
 case "$1" in
   deploy)
     target=${2?"Usage: $0 deploy <target>"}
@@ -24,15 +52,10 @@ case "$1" in
     result=$(build "$config" -A system)
     echo "Built $result"
 
-    if [[ ${USE_SUBSTITUTE-1} -eq 1 ]]; then use_substitute="-s"; else use_substitute=""; fi
-
-    echo "Uploading to $target"
-    nix copy --no-check-sigs --to "$target" $use_substitute "$result"
-
-    echo "Activating"
-    ssh "$target" -- \
-"nix-env --profile /nix/var/nix/profiles/system --set '$result' && \
-/nix/var/nix/profiles/system/bin/switch-to-configuration switch"
+    case "$target" in
+      "local") deploy_local "$result" ;;
+      *) deploy_remote "$target" "$result" ;;
+    esac
     ;;
 
   vm)
@@ -58,8 +81,11 @@ Usage: nixos-deploy { deploy <target> | vm | trace } [configuration.nix]
   If a directory named 'nixpkgs' exists in the current directory, it is used
   instead of the global nixpkgs channel.
 
-  deploy
-    Build then deploy a NixOS system. <target> is an SSH uri, eg. root@remote.
+  deploy local
+    Build and deploy a NixOS system for the current machine.
+
+  deploy ssh://<uri>
+    Build and deploy a NixOS system. <uri> is an SSH uri, eg. root@remote.
     This is a thin wrapper around 'nix-build' and 'nix-copy-closure'. The system is
     built locally, uploaded to the remote machine then activated (switched to).
 
