@@ -4,18 +4,17 @@ A small script to build and deploy a NixOS system.
 
 ## Installation
 
-Obtain the package like this:
+Obtain the package:
 
 ```nix
 let nixos-deploy =
   let
-    src = fetchgit {
+    src = pkgs.fetchgit {
       url = "https://github.com/Julow/nixos-deploy";
-      rev = "020042f9e548a93e54549b795bb3417da8f552e7";
-      sha256 = "1kw05nybnydg82rjjj1nxwmx1x0k8hr242xmrrxy8qc6n36s20zh";
+      rev = "4e7ce58bbc80e00c5f4ac5e1fa4035b91ce9a752";
+      sha256 = "0w5lz4q71b1axcdz6qglcg90f17zypk513n2fv235a7za7rq24ay";
     };
-  in
-  pkgs.callPackage src {};
+  in pkgs.callPackage src {};
 in
 ```
 
