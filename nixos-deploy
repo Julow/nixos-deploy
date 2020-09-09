@@ -58,6 +58,13 @@ case "$1" in
     esac
     ;;
 
+  option)
+    option=${2?"Usage: $0 option <option>"}
+    config=${3-configuration.nix}
+
+    nixos-option -I nixos-config="$config" "$2"
+    ;;
+
   vm)
     config=${2-configuration.nix}
 
@@ -92,6 +99,9 @@ Usage: nixos-deploy { deploy <target> | vm | trace } [configuration.nix]
     Env:
       USE_SUBSTITUTE    1 or 0, default: 1
         Enable or disable the option "--substitute-on-destination" of 'nix copy'.
+
+  option <option>
+    Run nixos-option on the system that would be deployed.
 
   vm
     Build a NixOS system and run it inside a qemu VM.
