@@ -39,6 +39,56 @@ The system is built and activated. The activation will be run as root, using `su
 
 If the current directory contain a directory named `nixpkgs`, it is used as nixpkgs.
 
+`my_desktop.nix` is expected to be a NixOS configuration, example use:
+
+common.nix:
+
+```nix
+{ config, pkgs, ... }:
+
+{
+  environment.systemPackages = with pkgs; [
+    my packages
+  ];
+
+  users.users... # users
+
+  # Other configuration you want to share between several machines
+}
+```
+
+my_desktop.nix:
+
+```nix
+let
+  hardware-configuration =
+    # copy-paste your /etc/nixos/hardware-configuration.nix here:
+    #   { config, lib, pkgs, ... }:
+    #   ...
+    ;
+in
+
+{
+  imports = [
+    hardware-configuration
+    ./common.nix
+  ];
+
+  # Insert here your configurations specific to this machine, example:
+
+  boot.loader...
+
+  networking.interfaces...
+
+  services.xserver = {
+    videoDrivers = ...;
+    dpi = ...;
+  };
+
+  system.stateVersion = ... # Keep the value you currently use
+}
+```
+
 ## Usage: Remote
 
 ```bash
