@@ -105,18 +105,34 @@ in
 The system is built locally and only the necessary files are sent to the remote server.
 The system declaration cannot import nix files from the remote server, importing `/etc/nixos/hardware-configuration.nix` won't work. 
 
-## Usage: Updating the nixpkgs submodule
+## Usage: nixpkgs submodule
 
-If a directory named `./nixpkgs` exists, it is used as nixpkgs.
+If a directory named `./nixpkgs` exists, it is used as nixpkgs while building the system.
+Global channels are ignored.
+
 If it is a Git submodule or a Git repository, this command will update it:
 
 ```sh
   nixos-deploy update nixos-20.09-small
 ```
 
-Channel names are one of [nixpkgs-channels](https://github.com/NixOS/nixpkgs-channels),
+Channel names are from [nixpkgs-channels](https://github.com/NixOS/nixpkgs-channels),
 this command show available channels:
 
 ```sh
   nixos-deploy update
+```
+
+## Usage: Testing in a VM
+
+This command will build the system, like the `deploy` command, and run it in a VM:
+
+```sh
+  nixos-deploy vm my_desktop.nix
+```
+
+Also useful while testing, this command will build the system with "traces" enabled, to show more details in case of error:
+
+```sh
+  nixos-deploy build my_desktop.nix
 ```
