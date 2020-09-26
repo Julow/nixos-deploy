@@ -2,9 +2,7 @@
 
 A small script to build and deploy a NixOS system.
 
-## Installation
-
-To install in your user environment:
+## Installation: in user environment
 
 ```sh
 git clone "https://github.com/Julow/nixos-deploy"
@@ -14,6 +12,29 @@ nix-env -if .
 
 To update, fetch the new version and run `nix-env -if .` again.
 To uninstall, run `nix-env -e nixos-deploy`.
+
+## Installation: in system packages
+
+```nix
+let nixos-deploy =
+  let
+    src = pkgs.fetchgit {
+      url = "https://github.com/Julow/nixos-deploy";
+      rev = "6e15213f01b2633d3c923c7f7626187e93d7d30b";
+      sha256 = "1c3h2mmc07l4rmzfvjkhpiss6i7p1d0qplmn6j753h4yyh5py9kw";
+    };
+  in pkgs.callPackage src {};
+in
+```
+
+And add it to your environment, in your NixOS configuration:
+
+```nix
+  environment.systemPackages = [
+    # other packages here ...
+    nixos-deploy
+  ];
+```
 
 ## Usage: Local
 
