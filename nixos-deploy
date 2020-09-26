@@ -2,6 +2,12 @@
 
 set -e
 
+die ()
+{
+  echo "Error: $1" >&2
+  exit 2
+}
+
 # Args: $config $@
 build ()
 {
@@ -44,6 +50,29 @@ deploy_remote ()
   ssh "$1" -- "$(activate_script "$2")"
 }
 
+NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs-channels"
+
+list_channels ()
+{
+  echo "Available channels:"
+  git ls-remote --heads --refs --sort=-version:refname "$NIXOS_CHANNELS_REPO" \
+    | sed -nE 's#^[^ ]* *refs/heads/([^/]+)$#  \1#;T;p'
+}
+
+update_nixpkgs ()
+{
+  if ! [[ -e nixpkgs/.git ]]; then
+    die "'nixpkgs' doesn't exist or isn't a Git submodule."
+  fi
+  (
+    cd nixpkgs
+    echo "Fetching $1"
+    git fetch --depth=1 "$NIXOS_CHANNELS_REPO" "$1"
+    git checkout -q FETCH_HEAD
+    echo "Updated to $1"
+  )
+}
+
 case "$1" in
   deploy)
     target=${2?"Usage: $0 deploy <target>"}
@@ -81,17 +110,28 @@ case "$1" in
     echo "Built $result"
     ;;
 
+  update)
+    if [[ $# -eq 1 ]]; then
+      list_channels
+    else
+      update_nixpkgs "$2"
+    fi
+    ;;
+
   *)
     cat <<EOF >&2
-Usage: nixos-deploy { deploy <target> | vm | trace } [configuration.nix]
+Usage: nixos-deploy { deploy | vm | trace | update }
 
   If a directory named 'nixpkgs' exists in the current directory, it is used
   instead of the global nixpkgs channel.
 
-  deploy local
+  Most commands take a NixOS configuration as last argument. The default is
+  "configuration.nix".
+
+  deploy local [configuration]
     Build and deploy a NixOS system for the current machine.
 
-  deploy ssh://<uri>
+  deploy ssh://<uri> [configuration]
     Build and deploy a NixOS system. <uri> is an SSH uri, eg. root@remote.
     This is a thin wrapper around 'nix-build' and 'nix-copy-closure'. The system is
     built locally, uploaded to the remote machine then activated (switched to).
@@ -100,14 +140,20 @@ Usage: nixos-deploy { deploy <target> | vm | trace } [configuration.nix]
       USE_SUBSTITUTE    1 or 0, default: 1
         Enable or disable the option "--substitute-on-destination" of 'nix copy'.
 
-  option <option>
+  option <option> [configuration]
     Run nixos-option on the system that would be deployed.
 
-  vm
+  vm [configuration]
     Build a NixOS system and run it inside a qemu VM.
 
-  trace
+  trace [configuration]
     Build a NixOS system with 'nix-build --show-trace' for debugging purpose.
+
+  update [branch]
+    When there is a directory named 'nixpkgs' and it is a Git submodule.
+    If [branch] is not given, list all available branches. Otherwise, update
+    the 'nixpkgs' submodule to the given branch.
+    Branches are taken from $NIXOS_CHANNELS_REPO.
 EOF
     ;;
 esac
