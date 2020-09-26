@@ -103,7 +103,7 @@ case "$1" in
     "$result"/bin/run-*-vm
     ;;
 
-  trace)
+  build)
     config=${2-configuration.nix}
 
     result=$(build "$config" -A system --show-trace)
@@ -120,7 +120,7 @@ case "$1" in
 
   *)
     cat <<EOF >&2
-Usage: nixos-deploy { deploy | vm | trace | update }
+Usage: nixos-deploy { deploy | vm | build | update }
 
   If a directory named 'nixpkgs' exists in the current directory, it is used
   instead of the global nixpkgs channel.
@@ -146,7 +146,7 @@ Usage: nixos-deploy { deploy | vm | trace | update }
   vm [configuration]
     Build a NixOS system and run it inside a qemu VM.
 
-  trace [configuration]
+  build [configuration]
     Build a NixOS system with 'nix-build --show-trace' for debugging purpose.
 
   update [branch]
