@@ -50,12 +50,13 @@ deploy_remote ()
   ssh "$1" -- "$(activate_script "$2")"
 }
 
-NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs-channels"
+NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs"
+CHANNELS_PATTERN=("refs/heads/nixpkgs-*" "refs/heads/nixos-*")
 
 list_channels ()
 {
   echo "Available channels:"
-  git ls-remote --heads --refs --sort=-version:refname "$NIXOS_CHANNELS_REPO" \
+  git ls-remote --heads --refs --sort=-version:refname "$NIXOS_CHANNELS_REPO" "${CHANNELS_PATTERN[@]}" \
     | sed -nE 's#^[^ ]* *refs/heads/([^/]+)$#  \1#;T;p'
 }
 
