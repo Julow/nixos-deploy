@@ -80,7 +80,7 @@ case "$1" in
     config=${3-configuration.nix}
 
     result=$(build "$config" -A system)
-    echo "Built $result"
+    nix path-info -Sh "$result"
 
     case "$target" in
       "local") deploy_local "$result" ;;
@@ -99,7 +99,7 @@ case "$1" in
     config=${2-configuration.nix}
 
     result=$(build "$config" -A vm)
-    echo "Built $result"
+    nix path-info -Sh "$result"
 
     "$result"/bin/run-*-vm
     ;;
@@ -108,7 +108,7 @@ case "$1" in
     config=${2-configuration.nix}
 
     result=$(build "$config" -A system --show-trace)
-    echo "Built $result"
+    nix path-info -Sh "$result"
     ;;
 
   update)
