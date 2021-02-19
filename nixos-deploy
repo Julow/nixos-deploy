@@ -60,6 +60,12 @@ list_channels ()
     | sed -nE 's#^[^ ]* *refs/heads/([^/]+)$#  \1#;T;p'
 }
 
+# Echo a nicely formatted rev with the date
+git_rev_date ()
+{
+  git log -1 --pretty=tformat:"%h%d %cr" HEAD
+}
+
 update_nixpkgs ()
 {
   if ! [[ -e nixpkgs/.git ]]; then
@@ -68,9 +74,9 @@ update_nixpkgs ()
   (
     cd nixpkgs
     echo "Fetching $1"
-    git fetch --depth=1 "$NIXOS_CHANNELS_REPO" "$1"
-    git checkout -q FETCH_HEAD
-    echo "Updated to $1"
+    git fetch -f --depth=1 "$NIXOS_CHANNELS_REPO" "$1:$1"
+    git checkout -q "$1"
+    echo "Updated to $1 `git_rev_date`"
   )
 }
 
@@ -112,6 +118,7 @@ case "$1" in
     ;;
 
   update)
+    ( cd nixpkgs; echo "Current rev: `git_rev_date`" )
     if [[ $# -eq 1 ]]; then
       list_channels
     else
