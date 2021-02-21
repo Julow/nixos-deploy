@@ -74,6 +74,7 @@ update_nixpkgs ()
   (
     cd nixpkgs
     echo "Fetching $1"
+    git checkout -q --detach HEAD
     git fetch -f --depth=1 "$NIXOS_CHANNELS_REPO" "$1:$1"
     git checkout -q "$1"
     echo "Updated to $1 `git_rev_date`"
