@@ -8,12 +8,6 @@ die ()
   exit 2
 }
 
-# Nix will refuse to do anything unless we pass this argument.
-nix_cmd ()
-{
-  nix --extra-experimental-features nix-command "$@"
-}
-
 # Args: $config $@
 build ()
 {
@@ -50,7 +44,7 @@ deploy_remote ()
   if [[ ${USE_SUBSTITUTE-1} -eq 1 ]]; then use_substitute="-s"; else use_substitute=""; fi
 
   echo "Uploading to $1"
-  nix_cmd copy --no-check-sigs --to "$1" $use_substitute "$2"
+  nix copy --no-check-sigs --to "$1" $use_substitute "$2"
 
   echo "Activating"
   ssh "$1" -- "$(activate_script "$2")"
@@ -93,7 +87,7 @@ case "$1" in
     config=${3-configuration.nix}
 
     result=$(build "$config" -A system)
-    nix_cmd path-info -Sh "$result"
+    nix path-info -Sh "$result"
 
     case "$target" in
       "local") deploy_local "$result" ;;
@@ -112,7 +106,7 @@ case "$1" in
     config=${2-configuration.nix}
 
     result=$(build "$config" -A vm)
-    nix_cmd path-info -Sh "$result"
+    nix path-info -Sh "$result"
 
     "$result"/bin/run-*-vm
     ;;
@@ -121,7 +115,7 @@ case "$1" in
     config=${2-configuration.nix}
 
     result=$(build "$config" -A system --show-trace)
-    nix_cmd path-info -Sh "$result"
+    nix path-info -Sh "$result"
     ;;
 
   update)

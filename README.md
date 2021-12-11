@@ -2,6 +2,11 @@
 
 A small script to build and deploy a NixOS system.
 
+With Nix version 2.4, this needs to be set in [nix.conf](https://nixos.org/manual/nix/unstable/command-ref/conf-file.html):
+```
+experimental-features = nix-command
+```
+
 ## Installation: in user environment
 
 ```sh
