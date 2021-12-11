@@ -25,8 +25,8 @@ let nixos-deploy =
   let
     src = pkgs.fetchgit {
       url = "https://github.com/Julow/nixos-deploy";
-      rev = "6e15213f01b2633d3c923c7f7626187e93d7d30b";
-      sha256 = "1c3h2mmc07l4rmzfvjkhpiss6i7p1d0qplmn6j753h4yyh5py9kw";
+      rev = "38d6c35d657e0c2942437e0dccf68485e4077abc";
+      sha256 = "14b4sigmn3kirbc8wkhfy089pbrc74c6scjq1b7h1a1fzjxcqy73";
     };
   in pkgs.callPackage src {};
 in
@@ -62,8 +62,6 @@ common.nix:
   environment.systemPackages = with pkgs; [
     my packages
   ];
-
-  users.users... # users
 
   # Other configuration you want to share between several machines
 }
@@ -104,7 +102,7 @@ in
 ## Usage: Remote
 
 ```bash
-  nixos-deploy deploy ssh://root@my_server my_server.nix
+nixos-deploy deploy ssh://root@my_server my_server.nix
 ```
 
 The system is built locally and only the necessary files are sent to the remote server.
@@ -118,14 +116,14 @@ Global channels are ignored.
 If it is a Git submodule or a Git repository, this command will update it:
 
 ```sh
-  nixos-deploy update nixos-20.09-small
+nixos-deploy update nixos-21.11
 ```
 
-Channel names are from [nixpkgs-channels](https://github.com/NixOS/nixpkgs-channels),
+Channel names are fetched from [nixpkgs-channels](https://github.com/NixOS/nixpkgs-channels),
 this command show available channels:
 
 ```sh
-  nixos-deploy update
+nixos-deploy update
 ```
 
 ## Usage: Testing in a VM
@@ -133,11 +131,11 @@ this command show available channels:
 This command will build the system, like the `deploy` command, and run it in a VM:
 
 ```sh
-  nixos-deploy vm my_desktop.nix
+nixos-deploy vm my_desktop.nix
 ```
 
 Also useful while testing, this command will build the system with "traces" enabled, to show more details in case of error:
 
 ```sh
-  nixos-deploy build my_desktop.nix
+nixos-deploy build my_desktop.nix
 ```
