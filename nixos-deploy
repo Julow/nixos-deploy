@@ -38,7 +38,7 @@ deploy_remote ()
   echo "Uploading to $1"
   nix copy --no-check-sigs --to "$1" $use_substitute "$2"
   echo "Activating"
-  ssh "$1" -- "$2/bin/activate"
+  ssh "$1" -- "NO_CHECK_HOSTNAME=${NO_CHECK_HOSTNAME-0} $2/bin/activate"
 }
 
 NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs"
@@ -131,6 +131,12 @@ Usage: nixos-deploy { deploy | vm | build | update }
   deploy local [configuration]
     Build and deploy a NixOS system for the current machine.
 
+    Env:
+      NO_CHECK_HOSTNAME
+        When set to '1', disable the hostname check. Without this, the
+        activation script compares the hostname of the current system and exits
+        if it is not the same as the new system.
+
   deploy ssh://<uri> [configuration]
     Build and deploy a NixOS system. <uri> is an SSH uri, eg. root@remote.
     This is a thin wrapper around 'nix-build' and 'nix-copy-closure'. The system is
@@ -139,6 +145,8 @@ Usage: nixos-deploy { deploy | vm | build | update }
     Env:
       USE_SUBSTITUTE    1 or 0, default: 1
         Enable or disable the option "--substitute-on-destination" of 'nix copy'.
+      NO_CHECK_HOSTNAME
+        Same as for 'deploy local'
 
   option <option> [configuration]
     Run nixos-option on the system that would be deployed.
