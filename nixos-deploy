@@ -24,32 +24,21 @@ build ()
   nix-build --no-out-link "$base_configuration" --arg configuration "import $config" "${nixpkgs[@]}" "$@"
 }
 
-# Outputs to stdout a shell script that activates system.
-# Args: system
-activate_script ()
-{
-  echo \
-"nix-env --profile /nix/var/nix/profiles/system --set '$1' && \
-/nix/var/nix/profiles/system/bin/switch-to-configuration switch"
-}
-
 # Args: system
 deploy_local ()
 {
   echo "Activating"
-  su -c "$(activate_script "$1")"
+  su -c "$1/bin/activate"
 }
 
 # Args: target system
 deploy_remote ()
 {
   if [[ ${USE_SUBSTITUTE-1} -eq 1 ]]; then use_substitute="-s"; else use_substitute=""; fi
-
   echo "Uploading to $1"
   nix copy --no-check-sigs --to "$1" $use_substitute "$2"
-
   echo "Activating"
-  ssh "$1" -- "$(activate_script "$2")"
+  ssh "$1" -- "$2/bin/activate"
 }
 
 NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs"
