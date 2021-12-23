@@ -2,6 +2,8 @@
 
 set -e
 
+: ${base_configuration:?Not a standalone script}
+
 die ()
 {
   echo "Error: $1" >&2
@@ -19,7 +21,7 @@ build ()
     nixpkgs=(-I nixpkgs=./nixpkgs)
   fi
   echo "Building $config" >&2
-  nix-build --no-out-link '<nixpkgs/nixos>' -I nixos-config="$config" "${nixpkgs[@]}" "$@"
+  nix-build --no-out-link "$base_configuration" --arg configuration "import $config" "${nixpkgs[@]}" "$@"
 }
 
 # Outputs to stdout a shell script that activates system.
@@ -84,7 +86,7 @@ update_nixpkgs ()
 case "$1" in
   deploy)
     target=${2?"Usage: $0 deploy <target>"}
-    config=${3-configuration.nix}
+    config=${3-./configuration.nix}
 
     result=$(build "$config" -A system)
     nix path-info -Sh "$result"
@@ -97,13 +99,13 @@ case "$1" in
 
   option)
     option=${2?"Usage: $0 option <option>"}
-    config=${3-configuration.nix}
+    config=${3-./configuration.nix}
 
     nixos-option -I nixos-config="$config" "$2"
     ;;
 
   vm)
-    config=${2-configuration.nix}
+    config=${2-./configuration.nix}
 
     result=$(build "$config" -A vm)
     nix path-info -Sh "$result"
@@ -112,7 +114,7 @@ case "$1" in
     ;;
 
   build)
-    config=${2-configuration.nix}
+    config=${2-./configuration.nix}
 
     result=$(build "$config" -A system --show-trace)
     nix path-info -Sh "$result"
