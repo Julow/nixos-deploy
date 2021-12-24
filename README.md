@@ -139,3 +139,19 @@ Also useful while testing, this command will build the system with "traces" enab
 ```sh
 nixos-deploy build my_desktop.nix
 ```
+
+## Safety checks
+
+The tool injects a NixOS module implementing these checks:
+
+- `services.openssh.enable` is `true` when deploying to a remote machine.
+  This check helps making sure that the remote machine will stay accessible
+  after the system is switched.
+  This check can't be disabled.
+
+- The hostname of the new system is the same as the system currently installed.
+  It first checks that the option `networking.hostName` is set then, before
+  switching to the new system, it checks that `/etc/hostname` contains the same
+  string.
+  This check can be disabled by setting the environment variable
+  `NO_CHECK_HOSTNAME=1`.
