@@ -77,14 +77,16 @@ case "$1" in
     target=${2?"Usage: $0 deploy <target>"}
     config=${3-./configuration.nix}
 
-    result=$(build "$config" -A system)
-    nix path-info -Sh "$result"
-
     case "$target" in
-      "local") deploy_local "$result" ;;
-      *) deploy_remote "$target" "$result" ;;
-    esac
-    ;;
+      "local")
+        result=$(build "$config" --arg check_sshd false -A system)
+        nix path-info -Sh "$result"
+        deploy_local "$result" ;;
+      *)
+        result=$(build "$config" --arg check_sshd true -A system)
+        nix path-info -Sh "$result"
+        deploy_remote "$target" "$result" ;;
+    esac ;;
 
   option)
     option=${2?"Usage: $0 option <option>"}
@@ -96,7 +98,7 @@ case "$1" in
   vm)
     config=${2-./configuration.nix}
 
-    result=$(build "$config" -A vm)
+    result=$(build "$config" --arg check_sshd false -A vm)
     nix path-info -Sh "$result"
 
     "$result"/bin/run-*-vm
@@ -105,7 +107,7 @@ case "$1" in
   build)
     config=${2-./configuration.nix}
 
-    result=$(build "$config" -A system --show-trace)
+    result=$(build "$config" --arg check_sshd false -A system --show-trace)
     nix path-info -Sh "$result"
     ;;
 

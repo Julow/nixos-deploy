@@ -1,10 +1,11 @@
-{ configuration, system ? builtins.currentSystem }:
+{ configuration, system ? builtins.currentSystem, check_sshd }:
 
 let
   eval = extra_modules:
     import <nixpkgs/nixos/lib/eval-config.nix> {
       inherit system;
-      modules = [ configuration ./check_hostname.nix ] ++ extra_modules;
+      modules = [ configuration ./check_hostname.nix ]
+        ++ (if check_sshd then [ ./check_sshd.nix ] else [ ]) ++ extra_modules;
     };
 
 in {
