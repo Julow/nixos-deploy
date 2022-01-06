@@ -21,7 +21,7 @@ build ()
     nixpkgs=(-I nixpkgs=./nixpkgs)
   fi
   echo "Building $config" >&2
-  nix-build --no-out-link "$base_configuration" --arg configuration "import $config" "${nixpkgs[@]}" "$@"
+  nix build -f "$base_configuration" --arg configuration "import $config" "${nixpkgs[@]}" "$@"
 }
 
 # Args: system
@@ -79,13 +79,13 @@ case "$1" in
 
     case "$target" in
       "local")
-        result=$(build "$config" --arg check_sshd false -A system)
-        nix path-info -Sh "$result"
-        deploy_local "$result" ;;
+        build "$config" --arg check_sshd false system
+        nix path-info -Sh ./result
+        deploy_local ./result ;;
       *)
-        result=$(build "$config" --arg check_sshd true -A system)
-        nix path-info -Sh "$result"
-        deploy_remote "$target" "$result" ;;
+        build "$config" --arg check_sshd true system
+        nix path-info -Sh ./result
+        deploy_remote "$target" ./result;;
     esac ;;
 
   option)
@@ -98,17 +98,17 @@ case "$1" in
   vm)
     config=${2-./configuration.nix}
 
-    result=$(build "$config" --arg check_sshd false -A vm)
-    nix path-info -Sh "$result"
+    build "$config" --arg check_sshd false vm
+    nix path-info -Sh ./result
 
-    "$result"/bin/run-*-vm
+    ./result/bin/run-*-vm
     ;;
 
   build)
     config=${2-./configuration.nix}
 
-    result=$(build "$config" --arg check_sshd false -A system --show-trace)
-    nix path-info -Sh "$result"
+    build "$config" --arg check_sshd false -L system
+    nix path-info -Sh ./result
     ;;
 
   update)
@@ -141,7 +141,7 @@ Usage: nixos-deploy { deploy | vm | build | update }
 
   deploy ssh://<uri> [configuration]
     Build and deploy a NixOS system. <uri> is an SSH uri, eg. root@remote.
-    This is a thin wrapper around 'nix-build' and 'nix-copy-closure'. The system is
+    This is a thin wrapper around 'nix build' and 'nix copy'. The system is
     built locally, uploaded to the remote machine then activated (switched to).
 
     Env:
@@ -157,7 +157,7 @@ Usage: nixos-deploy { deploy | vm | build | update }
     Build a NixOS system and run it inside a qemu VM.
 
   build [configuration]
-    Build a NixOS system with 'nix-build --show-trace' for debugging purpose.
+    Build a NixOS system with 'nix build -L' for debugging purpose.
 
   update [branch]
     When there is a directory named 'nixpkgs' and it is a Git submodule.
