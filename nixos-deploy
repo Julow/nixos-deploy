@@ -14,18 +14,18 @@ die ()
 build ()
 {
   local config="$1"
-  local -a nixpkgs
+  local -a nix_path
   shift
   if [[ -e nixpkgs.nix ]]; then
     echo "Using nixpkgs at './nixpkgs.nix'" >&2
     nixpkgs_path=`nix eval -f ./nixpkgs.nix nixpkgs.path`
-    nixpkgs=(-I nixpkgs="$nixpkgs_path")
+    nix_path=(NIX_PATH=nixpkgs=${nixpkgs_path})
   elif [[ -d nixpkgs ]]; then
     echo "Using nixpkgs at './nixpkgs'" >&2
-    nixpkgs=(-I nixpkgs=./nixpkgs)
+    nix_path=(NIX_PATH=nixpkgs=./nixpkgs)
   fi
   echo "Building $config" >&2
-  nix build -f "$base_configuration" --arg configuration "import $config" "${nixpkgs[@]}" "$@"
+  env "${nix_path[@]}" nix build -f "$base_configuration" --arg configuration "import $config" "$@"
 }
 
 # Args: system
