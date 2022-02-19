@@ -16,7 +16,11 @@ build ()
   local config="$1"
   local -a nixpkgs
   shift
-  if [[ -d nixpkgs ]]; then
+  if [[ -e nixpkgs.nix ]]; then
+    echo "Using nixpkgs at './nixpkgs.nix'" >&2
+    nixpkgs_path=`nix eval -f ./nixpkgs.nix nixpkgs.path`
+    nixpkgs=(-I nixpkgs="$nixpkgs_path")
+  elif [[ -d nixpkgs ]]; then
     echo "Using nixpkgs at './nixpkgs'" >&2
     nixpkgs=(-I nixpkgs=./nixpkgs)
   fi
@@ -41,35 +45,32 @@ deploy_remote ()
   ssh "$1" -- "NO_CHECK_HOSTNAME=${NO_CHECK_HOSTNAME-0} $2/bin/activate"
 }
 
-NIXOS_CHANNELS_REPO="https://github.com/NixOS/nixpkgs"
-CHANNELS_PATTERN=("refs/heads/nixpkgs-*" "refs/heads/nixos-*")
-
-list_channels ()
-{
-  echo "Available channels:"
-  git ls-remote --heads --refs --sort=-version:refname "$NIXOS_CHANNELS_REPO" "${CHANNELS_PATTERN[@]}" \
-    | sed -nE 's#^[^ ]* *refs/heads/([^/]+)$#  \1#;T;p'
-}
-
-# Echo a nicely formatted rev with the date
-git_rev_date ()
-{
-  git log -1 --pretty=tformat:"%h%d %cr" HEAD
-}
-
 update_nixpkgs ()
 {
-  if ! [[ -e nixpkgs/.git ]]; then
-    die "'nixpkgs' doesn't exist or isn't a Git submodule."
-  fi
-  (
-    cd nixpkgs
-    echo "Fetching $1"
-    git checkout -q --detach HEAD
-    git fetch -f --depth=1 "$NIXOS_CHANNELS_REPO" "$1:$1"
-    git checkout -q "$1"
-    echo "Updated to $1 `git_rev_date`"
+  local branch git_url tarball_url
+  { read branch; read git_url; read tarball_url; } < <(
+    nix eval --raw '(
+      ({
+         branch,
+         git_url ? "https://github.com/nixos/nixpkgs",
+         tarball_url ? "https://github.com/nixos/nixpkgs/archive/%REV%.tar.gz",
+         ...
+       }: "${branch}\n${git_url}\n${tarball_url}\n"
+      ) (import ./nixpkgs.nix)
+    )'
   )
+  local rev sha256
+  echo "Fecthing lastest $branch at $git_url"
+  read rev _ < <(git ls-remote --refs "$git_url" "$branch")
+  local url=${tarball_url/\%REV\%/$rev}
+  read sha256 < <(nix-prefetch-url --unpack "$url")
+  cat > nixpkgs.json <<EOF
+{
+  "url": "$url",
+  "sha256": "$sha256"
+}
+EOF
+  echo "Updated nixpkgs.json"
 }
 
 case "$1" in
@@ -111,14 +112,7 @@ case "$1" in
     nix path-info -Sh ./result
     ;;
 
-  update)
-    ( cd nixpkgs; echo "Current rev: `git_rev_date`" )
-    if [[ $# -eq 1 ]]; then
-      list_channels
-    else
-      update_nixpkgs "$2"
-    fi
-    ;;
+  update) update_nixpkgs ;;
 
   *)
     cat <<EOF >&2
@@ -126,6 +120,10 @@ Usage: nixos-deploy { deploy | vm | build | update }
 
   If a directory named 'nixpkgs' exists in the current directory, it is used
   instead of the global nixpkgs channel.
+
+  If a file named 'nixpkgs.nix' exists in the current directory, this
+  expression is used to obtain nixpkgs:
+      (import ./nixpkgs.nix).nixpkgs
 
   Most commands take a NixOS configuration as last argument. The default is
   "configuration.nix".
@@ -159,11 +157,19 @@ Usage: nixos-deploy { deploy | vm | build | update }
   build [configuration]
     Build a NixOS system with 'nix build -L' for debugging purpose.
 
-  update [branch]
-    When there is a directory named 'nixpkgs' and it is a Git submodule.
-    If [branch] is not given, list all available branches. Otherwise, update
-    the 'nixpkgs' submodule to the given branch.
-    Branches are taken from $NIXOS_CHANNELS_REPO.
+  update
+    Query the lastest version of a branch of nixpkgs and update 'nixpkgs.json'.
+    Read 'nixpkgs.nix', which must be compatible with:
+        {
+          nixpkgs = import (builtins.fetchTarball
+            (builtins.fromJSON (builtins.readFile ./nixpkgs.json)));
+
+          branch = "nixos-21.11";
+
+          # These are the default values and can be omitted.
+          git_url = "https://github.com/nixos/nixpkgs";
+          tarball_url = "https://github.com/nixos/nixpkgs/archive/%REV%.tar.gz";
+        }
 EOF
     ;;
 esac
