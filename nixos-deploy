@@ -25,7 +25,10 @@ build ()
     nix_path=(NIX_PATH=nixpkgs=./nixpkgs)
   fi
   echo "Building $config" >&2
-  env "${nix_path[@]}" nix build -f "$base_configuration" --arg configuration "import $config" "$@"
+  env "${nix_path[@]}" \
+    nix build --show-trace -f "$base_configuration" \
+      --arg configuration "import $config" \
+      "$@"
 }
 
 # Args: system
