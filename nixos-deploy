@@ -54,7 +54,7 @@ update_nixpkgs ()
 {
   local branch git_url tarball_url
   { read branch; read git_url; read tarball_url; } < <(
-    nix eval --raw '(
+    nix eval --raw --impure --expr '(
       ({
          branch,
          git_url ? "https://github.com/nixos/nixpkgs",
