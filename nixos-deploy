@@ -104,7 +104,7 @@ case "$1" in
   vm)
     config=${2-./configuration.nix}
 
-    build "$config" --arg check_sshd false vm
+    build "$config" --arg check_sshd false --arg check_hostname false vm
     nix path-info -Sh ./result
 
     ./result/bin/run-*-vm
